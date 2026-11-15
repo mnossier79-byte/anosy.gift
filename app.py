@@ -1,7 +1,8 @@
 import os
 from flask import Flask, render_template_string
 
-app = Flask(__name__)
+BASE = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, static_folder=BASE, static_url_path="/files")
 
 # ====== عدّل هنا ======
 HER_NAME = "Anosy"
@@ -16,10 +17,16 @@ CAPTIONS = [
     "ذكريات صغيرة بس غالية عندي 🤍",
 ]
 FINAL_MESSAGE = "ربنا يخليكي ليا ويفرحك دايمًا. كل سنة وانتي أقرب حد لقلبي ❤️"
-SONG = "song.mp3"  # حطه في static/
 # ======================
 
-PHOTOS_DIR = os.path.join(app.static_folder, "photos")
+PHOTOS_DIR = BASE
+
+
+def get_song():
+    for f in sorted(os.listdir(BASE)):
+        if f.lower().endswith((".mp3", ".m4a", ".ogg", ".wav")):
+            return f
+    return None
 
 
 def get_photos():
@@ -72,7 +79,7 @@ PAGE = """
   <button onclick="openGift()">افتحي الهدية</button>
 </div>
 
-{% if has_song %}<audio id="song" src="{{ url_for('static', filename=song) }}" loop></audio>{% endif %}
+{% if song %}<audio id="song" src="{{ url_for('static', filename=song) }}" loop></audio>{% endif %}
 
 <header>
   <h1>{{ title }}</h1>
@@ -81,7 +88,7 @@ PAGE = """
 
 {% for photo in photos %}
 <div class="card">
-  <img src="{{ url_for('static', filename='photos/' + photo) }}" alt="">
+  <img src="{{ url_for('static', filename=photo) }}" alt="">
   <p>{{ captions[loop.index0] if loop.index0 < captions|length else '' }}</p>
 </div>
 {% endfor %}
@@ -116,8 +123,7 @@ def home():
     return render_template_string(
         PAGE, name=HER_NAME, title=TITLE, intro=INTRO,
         captions=CAPTIONS, final=FINAL_MESSAGE,
-        photos=get_photos(), song=SONG,
-        has_song=os.path.exists(os.path.join(app.static_folder, SONG)),
+        photos=get_photos(), song=get_song(),
     )
 
 
